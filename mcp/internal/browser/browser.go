@@ -1,182 +1,242 @@
 package browser
 
 import (
-	"context"
-	"fmt"
-	"sync"
+	"encoding/json"
+	"os"
 	"time"
 
-	"github.com/playwright-community/playwright-go"
+	"github.com/go-rod/rod"
+	"github.com/go-rod/rod/lib/launcher"
+	"github.com/go-rod/rod/lib/proto"
+	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 // Browser 浏览器实例
 type Browser struct {
-	pw      playwright.Playwright
-	browser playwright.Browser
-	context playwright.BrowserContext
-	page    playwright.Page
-	mu      sync.Mutex
+	browser *rod.Browser
+	page    *rod.Page
+	headless bool
+	binPath string
+	proxy   string
 }
 
-// NewBrowser 创建浏览器实例
-func NewBrowser() (*Browser, error) {
-	// 安装Playwright（如果未安装）
-	if err := playwright.Install(); err != nil {
-		return nil, fmt.Errorf("安装Playwright失败: %v", err)
+// Config 浏览器配置
+type Config struct {
+	Headless bool
+	BinPath  string
+	Proxy    string
+	Cookies  []byte
+}
+
+// New 创建新的浏览器实例
+func New(cfg Config) (*Browser, error) {
+	// 启动浏览器
+	l := launcher.New().
+		Headless(cfg.Headless).
+		NoSandbox(true)
+
+	if cfg.BinPath != "" {
+		l.Bin(cfg.BinPath)
 	}
 
-	// 启动Playwright
-	pw, err := playwright.Run()
+	if cfg.Proxy != "" {
+		l.Proxy(cfg.Proxy)
+		logrus.Infof("使用代理: %s", cfg.Proxy)
+	}
+
+	url, err := l.Launch()
 	if err != nil {
-		return nil, fmt.Errorf("启动Playwright失败: %v", err)
+		return nil, errors.Wrap(err, "启动浏览器失败")
+	}
+
+	browser := rod.New().ControlURL(url).MustConnect()
+
+	// 创建页面
+	page, err := browser.Page(proto.TargetCreateTarget{URL: "about:blank"})
+	if err != nil {
+		browser.MustClose()
+		return nil, errors.Wrap(err, "创建页面失败")
+	}
+
+	// 设置超时
+	page = page.Timeout(5 * time.Minute)
+
+	// 设置视窗大小
+	if err := page.SetViewport(&proto.EmulationSetDeviceMetricsOverride{
+		Width:  1920,
+		Height: 1080,
+		Scale:  proto.Float64(1.0),
+	}); err != nil {
+		logrus.Warnf("设置视窗大小失败: %v", err)
+	}
+
+	// 加载Cookie
+	if len(cfg.Cookies) > 0 {
+		var cookies []*proto.NetworkCookie
+		if err := json.Unmarshal(cfg.Cookies, &cookies); err != nil {
+			logrus.Warnf("解析Cookie失败: %v", err)
+		} else {
+			for _, cookie := range cookies {
+				if err := browser.SetCookies([]*proto.NetworkCookieParam{{
+					Name:     cookie.Name,
+					Value:    cookie.Value,
+					Domain:   cookie.Domain,
+					Path:     cookie.Path,
+					HTTPOnly: cookie.HTTPOnly,
+					Secure:   cookie.Secure,
+				}}); err != nil {
+					logrus.Warnf("设置Cookie失败: %v", err)
+				}
+			}
+			logrus.Info("已加载Cookie")
+		}
 	}
 
 	return &Browser{
-		pw: pw,
+		browser:  browser,
+		page:     page,
+		headless: cfg.Headless,
+		binPath:  cfg.BinPath,
+		proxy:    cfg.Proxy,
 	}, nil
 }
 
-// Launch 启动浏览器
-func (b *Browser) Launch(headless bool) error {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+// Page 获取页面实例
+func (b *Browser) Page() *rod.Page {
+	return b.page
+}
 
-	// 启动浏览器
-	browser, err := b.pw.Chromium.Launch(playwright.BrowserTypeLaunchOptions{
-		Headless: playwright.Bool(headless),
-	})
-	if err != nil {
-		return fmt.Errorf("启动浏览器失败: %v", err)
+// Close 关闭浏览器
+func (b *Browser) Close() error {
+	if b.browser != nil {
+		b.browser.MustClose()
 	}
-	b.browser = browser
-
-	// 创建上下文
-	context, err := b.browser.NewContext(playwright.BrowserNewContextOptions{
-		UserAgent: playwright.String("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"),
-		Viewport: &playwright.Size{
-			Width:  1920,
-			Height: 1080,
-		},
-	})
-	if err != nil {
-		return fmt.Errorf("创建上下文失败: %v", err)
-	}
-	b.context = context
-
-	// 创建页面
-	page, err := context.NewPage()
-	if err != nil {
-		return fmt.Errorf("创建页面失败: %v", err)
-	}
-	b.page = page
-
 	return nil
 }
 
-// Login 登录小红书
-func (b *Browser) Login(ctx context.Context) error {
-	b.mu.Lock()
-	defer b.mu.Unlock()
-
-	if b.page == nil {
-		return fmt.Errorf("浏览器未启动")
-	}
-
-	// 访问小红书
-	_, err := b.page.Goto("https://www.xiaohongshu.com")
+// GetCookies 获取当前Cookie
+func (b *Browser) GetCookies() ([]byte, error) {
+	cookies, err := b.browser.GetCookies()
 	if err != nil {
-		return fmt.Errorf("访问小红书失败: %v", err)
+		return nil, errors.Wrap(err, "获取Cookie失败")
 	}
 
-	// 点击登录按钮
-	err = b.page.Click("text=登录")
+	data, err := json.Marshal(cookies)
 	if err != nil {
-		return fmt.Errorf("点击登录按钮失败: %v", err)
+		return nil, errors.Wrap(err, "序列化Cookie失败")
 	}
 
-	// 等待用户扫码登录
-	// TODO: 检测登录成功状态
-
-	return nil
+	return data, nil
 }
 
-// GetCookies 获取Cookie
-func (b *Browser) GetCookies() ([]playwright.Cookie, error) {
-	b.mu.Lock()
-	defer b.mu.Unlock()
-
-	if b.context == nil {
-		return nil, fmt.Errorf("浏览器上下文未创建")
+// Navigate 导航到指定URL
+func (b *Browser) Navigate(url string) error {
+	if err := b.page.Navigate(url); err != nil {
+		return errors.Wrapf(err, "导航到 %s 失败", url)
 	}
 
-	cookies, err := b.context.Cookies()
-	if err != nil {
-		return nil, fmt.Errorf("获取Cookie失败: %v", err)
+	// 等待页面加载
+	if err := b.page.WaitLoad(); err != nil {
+		logrus.Warnf("等待页面加载失败: %v", err)
 	}
 
-	return cookies, nil
-}
-
-// SetCookies 设置Cookie
-func (b *Browser) SetCookies(cookies []playwright.Cookie) error {
-	b.mu.Lock()
-	defer b.mu.Unlock()
-
-	if b.context == nil {
-		return fmt.Errorf("浏览器上下文未创建")
-	}
-
-	err := b.context.AddCookies(cookies)
-	if err != nil {
-		return fmt.Errorf("设置Cookie失败: %v", err)
-	}
-
-	return nil
-}
-
-// PublishImage 发布图文
-func (b *Browser) PublishImage(title, content string, images []string) error {
-	b.mu.Lock()
-	defer b.mu.Unlock()
-
-	if b.page == nil {
-		return fmt.Errorf("浏览器未启动")
-	}
-
-	// 访问发布页面
-	_, err := b.page.Goto("https://creator.xiaohongshu.com/publish/publish")
-	if err != nil {
-		return fmt.Errorf("访问发布页面失败: %v", err)
-	}
-
-	// TODO: 实现发布逻辑
-	// 1. 上传图片
-	// 2. 填写标题和内容
-	// 3. 添加标签
-	// 4. 点击发布
-
+	// 额外等待DOM稳定
 	time.Sleep(2 * time.Second)
 
 	return nil
 }
 
-// Close 关闭浏览器
-func (b *Browser) Close() error {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+// Screenshot 截图
+func (b *Browser) Screenshot() ([]byte, error) {
+	screenshot, err := b.page.Screenshot(false, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "截图失败")
+	}
+	return screenshot, nil
+}
 
-	if b.page != nil {
-		b.page.Close()
+// WaitElement 等待元素出现
+func (b *Browser) WaitElement(selector string, timeout time.Duration) (*rod.Element, error) {
+	page := b.page.Timeout(timeout)
+	defer page.CancelTimeout()
+
+	elem, err := page.Element(selector)
+	if err != nil {
+		return nil, errors.Wrapf(err, "等待元素 %s 失败", selector)
 	}
-	if b.context != nil {
-		b.context.Close()
+
+	return elem, nil
+}
+
+// Click 点击元素
+func (b *Browser) Click(selector string) error {
+	elem, err := b.page.Element(selector)
+	if err != nil {
+		return errors.Wrapf(err, "查找元素 %s 失败", selector)
 	}
-	if b.browser != nil {
-		b.browser.Close()
-	}
-	if b.pw != nil {
-		b.pw.Stop()
+
+	if err := elem.Click(proto.InputMouseButtonLeft, 1); err != nil {
+		return errors.Wrapf(err, "点击元素 %s 失败", selector)
 	}
 
 	return nil
+}
+
+// Input 输入文本
+func (b *Browser) Input(selector, text string) error {
+	elem, err := b.page.Element(selector)
+	if err != nil {
+		return errors.Wrapf(err, "查找元素 %s 失败", selector)
+	}
+
+	if err := elem.Input(text); err != nil {
+		return errors.Wrapf(err, "输入文本到 %s 失败", selector)
+	}
+
+	return nil
+}
+
+// GetText 获取元素文本
+func (b *Browser) GetText(selector string) (string, error) {
+	elem, err := b.page.Element(selector)
+	if err != nil {
+		return "", errors.Wrapf(err, "查找元素 %s 失败", selector)
+	}
+
+	text, err := elem.Text()
+	if err != nil {
+		return "", errors.Wrapf(err, "获取元素 %s 文本失败", selector)
+	}
+
+	return text, nil
+}
+
+// IsLoggedIn 检查是否已登录（通用方法）
+func (b *Browser) IsLoggedIn(checkURL, selector string) (bool, error) {
+	if err := b.Navigate(checkURL); err != nil {
+		return false, err
+	}
+
+	// 检查是否存在登录元素
+	has, _, err := b.page.Has(selector)
+	if err != nil {
+		return false, err
+	}
+
+	// 如果存在登录元素，说明未登录
+	return !has, nil
+}
+
+// DefaultBrowserConfig 获取默认浏览器配置
+func DefaultBrowserConfig() Config {
+	headless := os.Getenv("BROWSER_HEADLESS") != "false"
+	binPath := os.Getenv("BROWSER_BIN_PATH")
+	proxy := os.Getenv("BROWSER_PROXY")
+
+	return Config{
+		Headless: headless,
+		BinPath:  binPath,
+		Proxy:    proxy,
+	}
 }
