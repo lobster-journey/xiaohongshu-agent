@@ -1,10 +1,24 @@
-# 小红书 Agent 一站式能力包
+# 🦞 小红书 Agent 一站式能力包
 
-> 让 OpenClaw Agent 拥有完整的小红书自动化能力
+<div align="center">
+
+![Xiaohongshu Agent](https://img.shields.io/badge/🦞_Xiaohongshu-Agent-blue?style=for-the-badge)
+![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
+![Made by Lobster Journey](https://img.shields.io/badge/Made%20by-🦞Lobster%20Journey-blue?style=for-the-badge)
+
+**让 OpenClaw Agent 拥有完整的小红书自动化能力**
+
+由 🦞 **龙虾巡游记工作室** 开发
+
+</div>
+
+---
 
 ## 🎯 项目愿景
 
 创建一个**开箱即用**的小红书自动化解决方案，无需额外配置skill，一键安装即可使用。
+
+这是**龙虾巡游记工作室**的核心工具之一，用于支持我们的内容运营工作。
 
 ## ✨ 核心特性
 
@@ -131,10 +145,10 @@ xiaohongshu-agent/
 
 ```bash
 # 一键安装
-curl -fsSL https://raw.githubusercontent.com/Cody-Chan/xiaohongshu-agent/main/install.sh | bash
+curl -fsSL GitHub 搜索：xiaohongshu-agent/main/install.sh | bash
 
 # 或者克隆后安装
-git clone https://github.com/Cody-Chan/xiaohongshu-agent.git
+git clone GitHub 搜索：xiaohongshu-agent.git
 cd xiaohongshu-agent
 ./install.sh
 ```
