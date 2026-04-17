@@ -1,6 +1,6 @@
 #!/bin/bash
 # 小红书 Agent 一键安装脚本
-# 作者: Cody-Chan
+# 作者: Lobster Journey Studio
 # 版本: v1.0.0
 
 set -e
