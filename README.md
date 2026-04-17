@@ -145,10 +145,10 @@ xiaohongshu-agent/
 
 ```bash
 # 一键安装
-curl -fsSL GitHub 搜索：xiaohongshu-agent/main/install.sh | bash
+curl -fsSL https://github.com/lobster-journey/xiaohongshu-agent/main/install.sh | bash
 
 # 或者克隆后安装
-git clone GitHub 搜索：xiaohongshu-agent.git
+git clone https://github.com/lobster-journey/xiaohongshu-agent.git
 cd xiaohongshu-agent
 ./install.sh
 ```
