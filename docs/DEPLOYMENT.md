@@ -12,7 +12,7 @@
 ### 1. 克隆项目
 
 ```bash
-git clone https://github.com/Cody-Chan/xiaohongshu-agent.git
+git clone GitHub 搜索：xiaohongshu-agent.git
 cd xiaohongshu-agent
 ```
 
@@ -50,7 +50,7 @@ docker-compose exec xiaohongshu-agent xiaohongshu-login
 ### 1. 安装
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Cody-Chan/xiaohongshu-agent/main/install.sh | bash
+curl -fsSL GitHub 搜索：xiaohongshu-agent/main/install.sh | bash
 ```
 
 ### 2. 配置
@@ -155,7 +155,7 @@ docker-compose -f docker/docker-compose.yaml build
 docker-compose -f docker/docker-compose.yaml up -d
 
 # 直接安装
-curl -fsSL https://raw.githubusercontent.com/Cody-Chan/xiaohongshu-agent/main/install.sh | bash
+curl -fsSL GitHub 搜索：xiaohongshu-agent/main/install.sh | bash
 ```
 
 ## 🐛 故障排查

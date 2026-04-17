@@ -14,7 +14,7 @@
 
 ```bash
 # 1. 克隆项目
-git clone https://github.com/Cody-Chan/xiaohongshu-agent.git
+git clone GitHub 搜索：xiaohongshu-agent.git
 cd xiaohongshu-agent
 
 # 2. 安装依赖

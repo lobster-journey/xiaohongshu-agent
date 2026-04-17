@@ -55,7 +55,7 @@ choco install golang
 
 ```bash
 # 克隆仓库
-git clone https://github.com/Cody-Chan/xiaohongshu-agent.git
+git clone GitHub 搜索：xiaohongshu-agent.git
 
 # 进入项目目录
 cd xiaohongshu-agent
@@ -303,4 +303,4 @@ make clean
 
 **祝你使用愉快！** 🦞
 
-如有问题，请提交 Issue：https://github.com/Cody-Chan/xiaohongshu-agent/issues
+如有问题，请提交 Issue：GitHub 搜索：xiaohongshu-agent/issues

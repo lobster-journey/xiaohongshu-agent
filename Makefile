@@ -1,84 +1,71 @@
-.PHONY: build run test clean install deps
+# xiaohongshu-agent Makefile
+# Created by 🦞 Lobster Journey Studio
 
-# 变量
-BINARY_NAME=xiaohongshu-agent
-MAIN_PATH=./mcp
-BUILD_DIR=./bin
+.PHONY: all build install clean test help
 
 # 默认目标
-all: deps build
+all: build
 
-# 安装依赖
-deps:
-	@echo "📦 安装依赖..."
-	cd mcp && go mod download
-	@echo "✅ 依赖安装完成"
-
-# 构建
+# 构建MCP服务
 build:
-	@echo "🔨 构建项目..."
-	mkdir -p $(BUILD_DIR)
-	cd mcp && go build -o ../$(BUILD_DIR)/$(BINARY_NAME) .
-	@echo "✅ 构建完成: $(BUILD_DIR)/$(BINARY_NAME)"
+	@echo "🦞 构建 xiaohongshu-mcp..."
+	cd mcp && go build -o xiaohongshu-mcp ./cmd/server
+	@echo "✅ 构建完成"
 
-# 运行
-run: build
-	@echo "🚀 启动服务..."
-	./$(BUILD_DIR)/$(BINARY_NAME)
-
-# 测试
-test:
-	@echo "🧪 运行测试..."
-	cd mcp && go test -v ./...
+# 安装
+install:
+	@echo "🦞 安装 xiaohongshu-agent..."
+	./install.sh
 
 # 清理
 clean:
-	@echo "🧹 清理构建文件..."
-	rm -rf $(BUILD_DIR)
+	@echo "🧹 清理构建产物..."
+	rm -f mcp/xiaohongshu-mcp
+	rm -rf __pycache__
+	rm -rf .pytest_cache
+	find . -type d -name "__pycache__" -exec rm -rf {} +
 	@echo "✅ 清理完成"
 
-# 安装Playwright
-install-playwright:
-	@echo "🎭 安装Playwright..."
-	cd mcp && go run -v -x ./scripts/install_playwright.go
-	@echo "✅ Playwright安装完成"
+# 运行测试
+test:
+	@echo "🧪 运行测试..."
+	cd skill && python3 -m pytest tests/ -v
 
-# 开发模式（热重载）
-dev:
-	@echo "🔄 开发模式..."
-	@which air > /dev/null || go install github.com/cosmtrek/air@latest
-	cd mcp && air
+# 运行MCP服务
+run:
+	@echo "🚀 启动 xiaohongshu-mcp..."
+	cd mcp && ./xiaohongshu-mcp --port=18060
+
+# 登录小红书
+login:
+	@echo "🔐 启动登录工具..."
+	cd mcp && go run ./cmd/login
+
+# 查看日志
+logs:
+	@echo "📋 查看日志..."
+	tail -f ~/.xiaohongshu-agent/logs/mcp.log
+
+# 帮助
+help:
+	@echo "🦞 xiaohongshu-agent 命令："
+	@echo ""
+	@echo "  make build      - 构建MCP服务"
+	@echo "  make install    - 安装所有依赖"
+	@echo "  make clean      - 清理构建产物"
+	@echo "  make test       - 运行测试"
+	@echo "  make run        - 启动MCP服务"
+	@echo "  make login      - 登录小红书"
+	@echo "  make logs       - 查看日志"
+	@echo ""
+	@echo "🦞 Lobster Journey Studio"
 
 # Docker构建
 docker-build:
 	@echo "🐳 构建Docker镜像..."
-	docker build -f docker/Dockerfile -t xiaohongshu-agent:latest .
+	docker build -t xiaohongshu-agent:latest -f docker/Dockerfile .
 
 # Docker运行
 docker-run:
-	@echo "🐳 运行Docker容器..."
+	@echo "🐳 启动Docker容器..."
 	docker-compose -f docker/docker-compose.yaml up -d
-
-# Docker停止
-docker-stop:
-	@echo "🐳 停止Docker容器..."
-	docker-compose -f docker/docker-compose.yaml down
-
-# 帮助
-help:
-	@echo "小红书Agent - Make命令"
-	@echo ""
-	@echo "使用方法: make [目标]"
-	@echo ""
-	@echo "目标:"
-	@echo "  deps              安装依赖"
-	@echo "  build             构建项目"
-	@echo "  run               运行服务"
-	@echo "  test              运行测试"
-	@echo "  clean             清理构建文件"
-	@echo "  install-playwright 安装Playwright"
-	@echo "  dev               开发模式（热重载）"
-	@echo "  docker-build      构建Docker镜像"
-	@echo "  docker-run        运行Docker容器"
-	@echo "  docker-stop       停止Docker容器"
-	@echo "  help              显示帮助信息"

@@ -8,7 +8,7 @@
 
 如果你发现了bug或有功能建议：
 
-1. 检查 [Issues](https://github.com/Cody-Chan/xiaohongshu-agent/issues) 中是否已有相同问题
+1. 检查 [Issues](GitHub 搜索：xiaohongshu-agent/issues) 中是否已有相同问题
 2. 如果没有，创建新的 Issue，包含：
    - 问题描述
    - 复现步骤

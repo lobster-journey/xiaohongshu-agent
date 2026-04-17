@@ -60,7 +60,7 @@
 
 2. 安装新版本：
    ```bash
-   curl -fsSL https://raw.githubusercontent.com/Cody-Chan/xiaohongshu-agent/main/install.sh | bash
+   curl -fsSL GitHub 搜索：xiaohongshu-agent/main/install.sh | bash
    ```
 
 3. 恢复Cookie：

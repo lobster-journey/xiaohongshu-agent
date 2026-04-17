@@ -215,8 +215,8 @@
 
 ## 📞 联系方式
 
-- **GitHub**: https://github.com/Cody-Chan/xiaohongshu-agent
-- **Issues**: https://github.com/Cody-Chan/xiaohongshu-agent/issues
+- **GitHub**: GitHub 搜索：xiaohongshu-agent
+- **Issues**: GitHub 搜索：xiaohongshu-agent/issues
 
 ---
 

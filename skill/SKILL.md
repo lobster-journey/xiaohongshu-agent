@@ -9,7 +9,7 @@ metadata:
     install:
       - id: curl
         kind: curl
-        url: https://raw.githubusercontent.com/Cody-Chan/xiaohongshu-agent/main/install.sh
+        url: GitHub 搜索：xiaohongshu-agent/main/install.sh
         label: 一键安装小红书Agent
 ---
 
@@ -42,7 +42,7 @@ metadata:
 
 ```bash
 # 一键安装
-curl -fsSL https://raw.githubusercontent.com/Cody-Chan/xiaohongshu-agent/main/install.sh | bash
+curl -fsSL GitHub 搜索：xiaohongshu-agent/main/install.sh | bash
 ```
 
 ### 2. 登录
