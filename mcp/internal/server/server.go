@@ -72,6 +72,15 @@ func Start(port int) error {
 			stats.GET("/overview", handler.GetOverview)
 			stats.GET("/posts/:id", handler.GetPostStats)
 		}
+
+		// 笔记管理
+		notes := v1.Group("/notes")
+		{
+			notes.GET("", handler.GetUserNotes)
+			notes.POST("/hide", handler.HideNote)
+			notes.POST("/batch-hide", handler.BatchHideNotes)
+			notes.POST("/delete", handler.DeleteNote)
+		}
 	}
 
 	// 启动服务
