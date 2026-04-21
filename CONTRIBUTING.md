@@ -110,4 +110,4 @@ make test-python
 
 如有问题，可以通过以下方式联系：
 - 创建 Issue
-- 发送邮件至：your-email@example.com
+- 发送邮件至：lobster-journey@example.com
